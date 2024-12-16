@@ -5,88 +5,284 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Goal Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/firebase@8.10.0/firebase-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@8.10.0/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@8.10.0/firebase-storage.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@8.10.0/firebase-auth.js"></script>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f4f4f8;
+            background-color: #f4f4f4;
         }
-        .goal-card {
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        .goal-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        .custom-shadow {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-800 mb-4">Goal Tracker</h1>
-            <p class="text-gray-600">Track and Achieve Your Daily Goals</p>
-        </header>
+<body class="bg-gray-100 font-sans">
+    <div id="app" class="container mx-auto px-4 py-8">
+        <!-- Authentication Section -->
+        <div id="auth-section" class="max-w-md mx-auto">
+            <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Goal Tracker</h1>
+            
+            <div id="login-form" class="bg-white p-6 rounded-lg custom-shadow">
+                <input type="email" id="email" placeholder="Email" class="w-full p-2 mb-4 border rounded">
+                <input type="password" id="password" placeholder="Password" class="w-full p-2 mb-4 border rounded">
+                <button onclick="login()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Login</button>
+                <button onclick="register()" class="w-full bg-green-500 text-white p-2 rounded mt-2 hover:bg-green-600">Register</button>
+            </div>
+        </div>
 
-        <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6">
-            <!-- User Registration/Login Section -->
-            <section id="user-section" class="mb-6">
-                <div class="flex items-center mb-4">
-                    <input type="text" id="username" placeholder="Enter your name" 
-                           class="flex-grow px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <button onclick="registerUser()" 
-                            class="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600 transition">
-                        Register
-                    </button>
-                </div>
-                <div id="user-list" class="flex flex-wrap gap-2 mb-4"></div>
-            </section>
+        <!-- Main App Section (Hidden until login) -->
+        <div id="main-app" class="hidden">
+            <!-- Profile Section -->
+            <div class="bg-white p-6 rounded-lg custom-shadow mb-6">
+                <h2 class="text-2xl font-bold mb-4">Your Profile</h2>
+                <input type="file" id="profile-pic" accept="image/*" class="mb-4">
+                <video id="goal-video" controls class="mb-4 w-full max-w-md"></video>
+                <input type="file" id="goal-video-input" accept="video/*" class="mb-4">
+                <button onclick="uploadProfilePic()" class="bg-blue-500 text-white p-2 rounded">Upload Profile Pic</button>
+                <button onclick="uploadGoalVideo()" class="bg-green-500 text-white p-2 rounded ml-2">Upload Goal Video</button>
+            </div>
 
-            <!-- Goal Video Upload Section -->
-            <section id="goal-video-section" class="mb-6">
-                <h2 class="text-2xl font-semibold mb-4">Record Your Daily Goals</h2>
-                <div class="flex flex-col md:flex-row gap-4">
-                    <video id="preview" controls class="w-full md:w-1/2 rounded-md"></video>
-                    <div class="w-full md:w-1/2">
-                        <button onclick="startRecording()" 
-                                class="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 mb-2">
-                            <i class="fas fa-video mr-2"></i>Start Recording
-                        </button>
-                        <button onclick="stopRecording()" 
-                                class="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600 mb-2">
-                            <i class="fas fa-stop mr-2"></i>Stop Recording
-                        </button>
-                        <button onclick="uploadVideo()" 
-                                class="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600">
-                            <i class="fas fa-cloud-upload-alt mr-2"></i>Upload Video
-                        </button>
-                    </div>
-                </div>
-            </section>
+            <!-- Goal Setting Section -->
+            <div class="bg-white p-6 rounded-lg custom-shadow mb-6">
+                <h2 class="text-2xl font-bold mb-4">Set Your Goals</h2>
+                <input type="text" id="goal-input" placeholder="Enter your goal" class="w-full p-2 mb-4 border rounded">
+                <input type="datetime-local" id="goal-timeline" class="w-full p-2 mb-4 border rounded">
+                <button onclick="addGoal()" class="bg-purple-500 text-white p-2 rounded">Add Goal</button>
+            </div>
 
-            <!-- Goal Todo List Section -->
-            <section id="todo-section" class="mb-6">
-                <h2 class="text-2xl font-semibold mb-4">Daily Goals</h2>
-                <div class="flex mb-4">
-                    <input type="text" id="todo-input" placeholder="Enter your goal" 
-                           class="flex-grow px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <input type="time" id="todo-time" 
-                           class="px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <button onclick="addTodo()" 
-                            class="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600 transition">
-                        Add Goal
-                    </button>
-                </div>
-                <ul id="todo-list" class="space-y-2"></ul>
-            </section>
+            <!-- Users List Section -->
+            <div class="bg-white p-6 rounded-lg custom-shadow mb-6">
+                <h2 class="text-2xl font-bold mb-4">Connected Users</h2>
+                <ul id="users-list" class="space-y-2"></ul>
+            </div>
 
-            <!-- Goals Display Section -->
-            <section id="goals-display" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Dynamic goals will be added here -->
-            </section>
+            <!-- Goals Dashboard -->
+            <div class="bg-white p-6 rounded-lg custom-shadow">
+                <h2 class="text-2xl font-bold mb-4">Goals Dashboard</h2>
+                <div id="goals-dashboard" class="space-y-4"></div>
+            </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
-    <script src="script.js"></script>
+    <script>
+        // Firebase Configuration (Replace with your own Firebase project config)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const firestore = firebase.firestore();
+        const storage = firebase.storage();
+
+        // Authentication Functions
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    document.getElementById('auth-section').style.display = 'none';
+                    document.getElementById('main-app').classList.remove('hidden');
+                    loadUserData();
+                })
+                .catch((error) => {
+                    alert('Login Error: ' + error.message);
+                });
+        }
+
+        function register() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    return firestore.collection('users').doc(user.uid).set({
+                        email: email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                })
+                .then(() => {
+                    document.getElementById('auth-section').style.display = 'none';
+                    document.getElementById('main-app').classList.remove('hidden');
+                })
+                .catch((error) => {
+                    alert('Registration Error: ' + error.message);
+                });
+        }
+
+        // Profile Picture Upload
+        function uploadProfilePic() {
+            const file = document.getElementById('profile-pic').files[0];
+            const user = auth.currentUser;
+
+            if (file && user) {
+                const storageRef = storage.ref(`profile_pics/${user.uid}`);
+                storageRef.put(file).then((snapshot) => {
+                    snapshot.ref.getDownloadURL().then((downloadURL) => {
+                        firestore.collection('users').doc(user.uid).update({
+                            profilePicUrl: downloadURL
+                        });
+                        alert('Profile picture uploaded successfully!');
+                    });
+                });
+            }
+        }
+
+        // Goal Video Upload
+        function uploadGoalVideo() {
+            const file = document.getElementById('goal-video-input').files[0];
+            const user = auth.currentUser;
+
+            if (file && user) {
+                const storageRef = storage.ref(`goal_videos/${user.uid}`);
+                storageRef.put(file).then((snapshot) => {
+                    snapshot.ref.getDownloadURL().then((downloadURL) => {
+                        firestore.collection('users').doc(user.uid).update({
+                            goalVideoUrl: downloadURL
+                        });
+                        document.getElementById('goal-video').src = downloadURL;
+                        alert('Goal video uploaded successfully!');
+                    });
+                });
+            }
+        }
+
+        // Add Goal Function
+        function addGoal() {
+            const goalText = document.getElementById('goal-input').value;
+            const timeline = document.getElementById('goal-timeline').value;
+            const user = auth.currentUser;
+
+            if (goalText && timeline && user) {
+                firestore.collection('goals').add({
+                    userId: user.uid,
+                    goal: goalText,
+                    timeline: timeline,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    completed: false
+                });
+                document.getElementById('goal-input').value = '';
+                document.getElementById('goal-timeline').value = '';
+                loadGoals();
+            }
+        }
+
+        // Load User Data
+        function loadUserData() {
+            const user = auth.currentUser;
+            if (user) {
+                firestore.collection('users').doc(user.uid).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            const userData = doc.data();
+                            if (userData.profilePicUrl) {
+                                // Display profile pic logic here
+                            }
+                            if (userData.goalVideoUrl) {
+                                document.getElementById('goal-video').src = userData.goalVideoUrl;
+                            }
+                        }
+                    });
+                
+                loadUsers();
+                loadGoals();
+            }
+        }
+
+        // Load All Users
+        function loadUsers() {
+            const usersList = document.getElementById('users-list');
+            usersList.innerHTML = '';
+
+            firestore.collection('users').get()
+                .then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        const userData = doc.data();
+                        const userItem = document.createElement('li');
+                        userItem.textContent = userData.email;
+                        userItem.classList.add('cursor-pointer', 'hover:text-blue-500');
+                        userItem.onclick = () => loadUserGoals(doc.id);
+                        usersList.appendChild(userItem);
+                    });
+                });
+        }
+
+        // Load Goals Dashboard
+        function loadGoals() {
+            const goalsDashboard = document.getElementById('goals-dashboard');
+            goalsDashboard.innerHTML = '';
+
+            firestore.collection('goals')
+                .where('userId', '==', auth.currentUser.uid)
+                .get()
+                .then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        const goalData = doc.data();
+                        const goalCard = document.createElement('div');
+                        goalCard.classList.add('bg-gray-100', 'p-4', 'rounded', 'flex', 'justify-between', 'items-center');
+                        goalCard.innerHTML = `
+                            <div>
+                                <p class="font-bold">${goalData.goal}</p>
+                                <p class="text-sm text-gray-600">Due: ${new Date(goalData.timeline).toLocaleString()}</p>
+                            </div>
+                            <input type="checkbox" ${goalData.completed ? 'checked' : ''} 
+                                onchange="toggleGoalCompletion('${doc.id}', this.checked)">
+                        `;
+                        goalsDashboard.appendChild(goalCard);
+                    });
+                });
+        }
+
+        // Load Goals for Specific User
+        function loadUserGoals(userId) {
+            const goalsDashboard = document.getElementById('goals-dashboard');
+            goalsDashboard.innerHTML = '';
+
+            firestore.collection('goals')
+                .where('userId', '==', userId)
+                .get()
+                .then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        const goalData = doc.data();
+                        const goalCard = document.createElement('div');
+                        goalCard.classList.add('bg-gray-100', 'p-4', 'rounded');
+                        goalCard.innerHTML = `
+                            <p class="font-bold">${goalData.goal}</p>
+                            <p class="text-sm text-gray-600">Due: ${new Date(goalData.timeline).toLocaleString()}</p>
+                        `;
+                        goalsDashboard.appendChild(goalCard);
+                    });
+                });
+        }
+
+        // Toggle Goal Completion
+        function toggleGoalCompletion(goalId, completed) {
+            firestore.collection('goals').doc(goalId).update({
+                completed: completed
+            });
+        }
+
+        // Authentication State Observer
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                document.getElementById('auth-section').style.display = 'none';
+                document.getElementById('main-app').classList.remove('hidden');
+                loadUserData();
+            } else {
+                document.getElementById('auth-section').style.display = 'block';
+                document.getElementById('main-app').classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 </html>
