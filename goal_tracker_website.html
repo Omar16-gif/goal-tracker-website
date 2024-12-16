@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goal Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        main {
+            padding: 1rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .user-list, .to-do-list {
+            margin-bottom: 1.5rem;
+        }
+        .to-do-list input, .timeline input {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .user {
+            background: #f0f0f0;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+        }
+        .timeline input {
+            width: 48%;
+            margin-right: 4%;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .responsive-video {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        video {
+            width: 100%;
+            border-radius: 10px;
+        }
+        @media (max-width: 768px) {
+            .timeline input {
+                width: 100%;
+                margin: 0.5rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Goal Tracker</h1>
+    </header>
+    <main>
+        <div class="container">
+            <section class="user-list">
+                <h2>Users</h2>
+                <div id="users">
+                    <!-- User entries will appear here -->
+                </div>
+                <input type="text" id="newUser" placeholder="Add a new user">
+                <button onclick="addUser()">Add User</button>
+            </section>
+
+            <section class="to-do-list">
+                <h2>To-Do List</h2>
+                <div id="tasks">
+                    <!-- Task entries will appear here -->
+                </div>
+                <input type="text" id="newTask" placeholder="Add a new task">
+                <input type="time" id="startTime">
+                <input type="time" id="endTime">
+                <button onclick="addTask()">Add Task</button>
+            </section>
+
+            <section class="responsive-video">
+                <h2>Video Upload</h2>
+                <input type="file" id="videoUpload" accept="video/*" onchange="uploadVideo()">
+                <div id="videos">
+                    <!-- Uploaded videos will appear here -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        const users = [];
+        const tasks = [];
+        const videos = [];
+
+        function addUser() {
+            const newUser = document.getElementById('newUser').value;
+            if (newUser) {
+                users.push(newUser);
+                document.getElementById('newUser').value = '';
+                displayUsers();
+            }
+        }
+
+        function displayUsers() {
+            const userContainer = document.getElementById('users');
+            userContainer.innerHTML = '';
+            users.forEach((user, index) => {
+                const div = document.createElement('div');
+                div.className = 'user';
+                div.textContent = user;
+                div.onclick = () => alert(`Viewing ${user}'s tasks`);
+                userContainer.appendChild(div);
+            });
+        }
+
+        function addTask() {
+            const newTask = document.getElementById('newTask').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            if (newTask && startTime && endTime) {
+                tasks.push({ task: newTask, startTime, endTime });
+                document.getElementById('newTask').value = '';
+                document.getElementById('startTime').value = '';
+                document.getElementById('endTime').value = '';
+                displayTasks();
+            }
+        }
+
+        function displayTasks() {
+            const taskContainer = document.getElementById('tasks');
+            taskContainer.innerHTML = '';
+            tasks.forEach((task) => {
+                const div = document.createElement('div');
+                div.textContent = `${task.task} (from ${task.startTime} to ${task.endTime})`;
+                taskContainer.appendChild(div);
+            });
+        }
+
+        function uploadVideo() {
+            const videoFile = document.getElementById('videoUpload').files[0];
+            if (videoFile) {
+                const videoURL = URL.createObjectURL(videoFile);
+                videos.push(videoURL);
+                displayVideos();
+            }
+        }
+
+        function displayVideos() {
+            const videoContainer = document.getElementById('videos');
+            videoContainer.innerHTML = '';
+            videos.forEach((video) => {
+                const videoElement = document.createElement('video');
+                videoElement.src = video;
+                videoElement.controls = true;
+                videoContainer.appendChild(videoElement);
+            });
+        }
+    </script>
+</body>
+</html>
